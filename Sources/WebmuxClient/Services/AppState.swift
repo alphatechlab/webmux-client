@@ -269,6 +269,16 @@ final class AppState {
       try? config.write(toFile: configPath, atomically: true, encoding: .utf8)
     }
 
+    // Generate Tailscale HTTPS certificate if available
+    if hasTailscale && !tailscaleHostname.isEmpty {
+      let certsDir = BrewManager.libexecDir() + "/certs"
+      let certFile = certsDir + "/tailscale.crt"
+      let keyFile = certsDir + "/tailscale.key"
+      if !FileManager.default.fileExists(atPath: certFile) {
+        _ = await Shell.runAsync("mkdir -p '\(certsDir)' && /Applications/Tailscale.app/Contents/MacOS/Tailscale cert --cert-file '\(certFile)' --key-file '\(keyFile)' '\(tailscaleHostname)' 2>&1")
+      }
+    }
+
     let whisperDir = installWhisperOption && hasWhisper ? BrewManager.whisperDir : nil
     await ServiceManager.createPlists(
       webmuxBinary: BrewManager.webmuxBinary(),
