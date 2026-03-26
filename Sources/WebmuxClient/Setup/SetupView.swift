@@ -201,15 +201,9 @@ struct SetupView: View {
         .disabled(!state.hasHomebrew || !state.hasNode || !state.hasRust || !state.hasTailscale)
 
       case .install:
-        if !state.hasWebmux {
+        if state.needsInstall {
           Button("INSTALL") {
             Task { await state.runInstall() }
-          }
-          .buttonStyle(NeonAccentButton())
-          .disabled(state.isInstalling)
-        } else if state.installWhisperOption && state.hasPython && !state.hasWhisper {
-          Button("INSTALL WHISPER") {
-            Task { await state.runWhisperInstall() }
           }
           .buttonStyle(NeonAccentButton())
           .disabled(state.isInstalling)

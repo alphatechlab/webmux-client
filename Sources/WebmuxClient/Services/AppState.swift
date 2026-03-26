@@ -44,6 +44,10 @@ final class AppState {
   var githubDir = ""
   var installWhisperOption = true
 
+  var needsInstall: Bool {
+    !hasWebmux || (installWhisperOption && hasPython && !hasWhisper)
+  }
+
   // MARK: - Runtime state
 
   var webmuxRunning = false
@@ -164,6 +168,7 @@ final class AppState {
     installFailed = false
     installLog = ""
 
+    // --- Homebrew ---
     if !hasHomebrew {
       appendLog("Installing Homebrew...\n")
       let r = await BrewManager.installBrew()
@@ -176,26 +181,30 @@ final class AppState {
       hasHomebrew = true
     }
 
-    appendLog("Installing webmux via Homebrew...\n")
-    appendLog("$ brew tap \(BrewManager.tapName) && brew install \(BrewManager.formulaName)\n\n")
+    // --- Webmux ---
+    if !hasWebmux {
+      appendLog("Installing webmux via Homebrew...\n")
+      appendLog("$ brew tap \(BrewManager.tapName) && brew install \(BrewManager.formulaName)\n\n")
 
-    let code = await BrewManager.tapAndInstall { [weak self] line in
-      Task { @MainActor [weak self] in
-        self?.appendLog(line)
+      let code = await BrewManager.tapAndInstall { [weak self] line in
+        Task { @MainActor [weak self] in
+          self?.appendLog(line)
+        }
       }
+
+      if code != 0 {
+        appendLog("\nInstallation failed (exit \(code)).\n")
+        installFailed = true
+        isInstalling = false
+        return
+      }
+
+      hasWebmux = true
+      appendLog("\nWebmux installed successfully!\n")
     }
 
-    if code != 0 {
-      appendLog("\nInstallation failed (exit \(code)).\n")
-      installFailed = true
-      isInstalling = false
-      return
-    }
-
-    hasWebmux = true
-    appendLog("\nWebmux installed successfully!\n")
-
-    if installWhisperOption && hasPython {
+    // --- Whisper ---
+    if installWhisperOption && hasPython && !hasWhisper {
       appendLog("\nInstalling Whisper...\n")
       let wCode = await BrewManager.installWhisper { [weak self] line in
         Task { @MainActor [weak self] in
@@ -208,28 +217,6 @@ final class AppState {
       } else {
         appendLog("Whisper installation failed (non-critical).\n")
       }
-    }
-
-    isInstalling = false
-  }
-
-  func runWhisperInstall() async {
-    isInstalling = true
-    installFailed = false
-    installLog = ""
-
-    appendLog("Installing Whisper...\n")
-    let wCode = await BrewManager.installWhisper { [weak self] line in
-      Task { @MainActor [weak self] in
-        self?.appendLog(line)
-      }
-    }
-    if wCode == 0 {
-      hasWhisper = true
-      appendLog("Whisper installed!\n")
-    } else {
-      appendLog("Whisper installation failed.\n")
-      installFailed = true
     }
 
     isInstalling = false
