@@ -27,44 +27,30 @@ struct StepDoneView: View {
           .foregroundStyle(KG.green)
 
         VStack(spacing: 8) {
-          if !state.tailscaleHostname.isEmpty {
-            Text("Scan to open webmux on your phone:")
-              .font(KG.monoSmall)
-              .foregroundStyle(KG.cyan.opacity(0.5))
+          let qrURL = state.tailscaleHostname.isEmpty
+            ? "https://tailscale.com/download"
+            : state.webmuxURL
 
-            if let qrImage = generateQR(for: state.webmuxURL) {
-              Image(nsImage: qrImage)
-                .interpolation(.none)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 140, height: 140)
-                .background(Color.white)
-                .cornerRadius(6)
-            }
+          Text(state.tailscaleHostname.isEmpty
+            ? "Install Tailscale on your phone, then scan again:"
+            : "Scan to open webmux on your phone:")
+            .font(KG.monoSmall)
+            .foregroundStyle(KG.cyan.opacity(0.5))
 
-            Text(state.webmuxURL)
-              .font(.system(size: 10, design: .monospaced))
-              .foregroundStyle(KG.cyan.opacity(0.4))
-              .textSelection(.enabled)
-          } else {
-            Text("Install Tailscale on your phone to connect:")
-              .font(KG.monoSmall)
-              .foregroundStyle(KG.cyan.opacity(0.5))
-
-            if let qrImage = generateQR(for: "https://tailscale.com/download") {
-              Image(nsImage: qrImage)
-                .interpolation(.none)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 140, height: 140)
-                .background(Color.white)
-                .cornerRadius(6)
-            }
-
-            Text("tailscale.com/download")
-              .font(.system(size: 10, design: .monospaced))
-              .foregroundStyle(KG.cyan.opacity(0.4))
+          if let qrImage = generateQR(for: qrURL) {
+            Image(nsImage: qrImage)
+              .interpolation(.none)
+              .resizable()
+              .scaledToFit()
+              .frame(width: 140, height: 140)
+              .background(Color.white)
+              .cornerRadius(6)
           }
+
+          Text(qrURL)
+            .font(.system(size: 10, design: .monospaced))
+            .foregroundStyle(KG.cyan.opacity(0.4))
+            .textSelection(.enabled)
         }
 
         Button("OPEN BROWSER") {

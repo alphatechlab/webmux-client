@@ -6,7 +6,7 @@ final class KeygenAudio: @unchecked Sendable {
   static let shared = KeygenAudio()
 
   private var player: AVAudioPlayer?
-  private(set) var isMuted = false
+  private(set) var isMuted: Bool = UserDefaults.standard.bool(forKey: "audioMuted")
 
   func start() {
     guard player == nil else { return }
@@ -23,6 +23,7 @@ final class KeygenAudio: @unchecked Sendable {
 
   func toggleMute() {
     isMuted.toggle()
+    UserDefaults.standard.set(isMuted, forKey: "audioMuted")
     if isMuted {
       player?.pause()
     } else {
