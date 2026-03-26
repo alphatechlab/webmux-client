@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreImage.CIFilterBuiltins
 
 struct StepDoneView: View {
   @Bindable var state: AppState
@@ -25,12 +26,35 @@ struct StepDoneView: View {
           .font(KG.mono)
           .foregroundStyle(KG.green)
 
-        VStack(alignment: .leading, spacing: 4) {
-          Text("  The terminal icon in your menu bar")
-          Text("  controls services, updates & logs.")
+        if !state.tailscaleHostname.isEmpty {
+          VStack(spacing: 8) {
+            Text("Scan to open on your phone:")
+              .font(KG.monoSmall)
+              .foregroundStyle(KG.cyan.opacity(0.5))
+
+            if let qrImage = generateQR(for: state.webmuxURL) {
+              Image(nsImage: qrImage)
+                .interpolation(.none)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 140, height: 140)
+                .background(Color.white)
+                .cornerRadius(6)
+            }
+
+            Text(state.webmuxURL)
+              .font(.system(size: 10, design: .monospaced))
+              .foregroundStyle(KG.cyan.opacity(0.4))
+              .textSelection(.enabled)
+          }
+        } else {
+          VStack(alignment: .leading, spacing: 4) {
+            Text("  The terminal icon in your menu bar")
+            Text("  controls services, updates & logs.")
+          }
+          .font(KG.monoSmall)
+          .foregroundStyle(KG.cyan.opacity(0.5))
         }
-        .font(KG.monoSmall)
-        .foregroundStyle(KG.cyan.opacity(0.5))
 
         Button("OPEN BROWSER") {
           state.openInBrowser()
@@ -54,5 +78,16 @@ struct StepDoneView: View {
     }
     .frame(maxWidth: .infinity)
     .padding(16)
+  }
+
+  private func generateQR(for string: String) -> NSImage? {
+    let context = CIContext()
+    let filter = CIFilter.qrCodeGenerator()
+    filter.message = Data(string.utf8)
+    filter.correctionLevel = "M"
+    guard let ciImage = filter.outputImage else { return nil }
+    let scaled = ciImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+    guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return nil }
+    return NSImage(cgImage: cgImage, size: NSSize(width: scaled.extent.width, height: scaled.extent.height))
   }
 }

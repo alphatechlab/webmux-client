@@ -17,6 +17,7 @@ struct StepCheckView: View {
         DepRow(name: "Homebrew", detail: "package manager", installed: state.hasHomebrew, required: true)
         DepRow(name: "Node.js", detail: state.nodeVersion.isEmpty ? "javascript runtime" : state.nodeVersion, installed: state.hasNode, required: true)
         DepRow(name: "Rust", detail: state.rustVersion.isEmpty ? "sidecar compiler" : state.rustVersion, installed: state.hasRust, required: true)
+        DepRow(name: "Tailscale", detail: state.hasTailscale ? (state.tailscaleHostname.isEmpty ? "connected" : state.tailscaleHostname) : "remote access", installed: state.hasTailscale, required: true)
         DepRow(name: "Python3", detail: "whisper (optional)", installed: state.hasPython, required: false)
         DepRow(name: "ffmpeg", detail: "audio decode (whisper)", installed: state.hasFfmpeg, required: false)
 
@@ -29,7 +30,7 @@ struct StepCheckView: View {
       .background(KG.bgCard)
       .neonBorder()
 
-      if !state.hasHomebrew || !state.hasNode || !state.hasRust {
+      if !state.hasHomebrew || !state.hasNode || !state.hasRust || !state.hasTailscale {
         HStack(spacing: 6) {
           Text("!")
             .font(KG.mono)

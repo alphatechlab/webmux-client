@@ -29,11 +29,13 @@ final class AppState {
   var hasRust = false
   var hasPython = false
   var hasFfmpeg = false
+  var hasTailscale = false
   var hasWebmux = false
   var hasWhisper = false
   var hasServices = false
   var nodeVersion = ""
   var rustVersion = ""
+  var tailscaleHostname = ""
 
   var installLog = ""
   var isInstalling = false
@@ -122,6 +124,14 @@ final class AppState {
 
     let ffmpegR = await Shell.runAsync("which ffmpeg", login: true)
     hasFfmpeg = ffmpegR.exitCode == 0
+
+    let tsR = await Shell.runAsync("/Applications/Tailscale.app/Contents/MacOS/Tailscale status --json 2>/dev/null")
+    hasTailscale = tsR.exitCode == 0
+    if hasTailscale {
+      let hostR = await Shell.runAsync("/Applications/Tailscale.app/Contents/MacOS/Tailscale status --json 2>/dev/null | /usr/bin/grep -o '\"DNSName\":\"[^\"]*\"' | head -1 | sed 's/\"DNSName\":\"//;s/\\.$//' | sed 's/\"$//'")
+      let raw = hostR.output.trimmingCharacters(in: .whitespacesAndNewlines)
+      tailscaleHostname = raw.isEmpty ? "" : raw
+    }
 
     let brewPrefix = BrewManager.brewPrefix()
     let brewInstalled = FileManager.default.fileExists(atPath: "\(brewPrefix)/Cellar/webmux")
@@ -425,8 +435,14 @@ final class AppState {
 
   // MARK: - Actions
 
+  var webmuxURL: String {
+    tailscaleHostname.isEmpty
+      ? "https://localhost:3030"
+      : "https://\(tailscaleHostname):3030"
+  }
+
   func openInBrowser() {
-    if let url = URL(string: "https://localhost:3030") {
+    if let url = URL(string: webmuxURL) {
       NSWorkspace.shared.open(url)
     }
   }

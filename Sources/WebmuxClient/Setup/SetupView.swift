@@ -202,7 +202,7 @@ struct SetupView: View {
           }
         }
         .buttonStyle(NeonAccentButton())
-        .disabled(!state.hasHomebrew || !state.hasNode || !state.hasRust)
+        .disabled(!state.hasHomebrew || !state.hasNode || !state.hasRust || !state.hasTailscale)
 
       case .install:
         if !state.hasWebmux {
