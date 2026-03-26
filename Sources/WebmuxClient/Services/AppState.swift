@@ -556,7 +556,7 @@ final class AppState {
     guard caffeinateProcess == nil else { return }
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/caffeinate")
-    process.arguments = ["-dis"]
+    process.arguments = ["-s"]
     do {
       try process.run()
       caffeinateProcess = process
