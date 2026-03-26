@@ -36,6 +36,7 @@ final class AppState {
   var nodeVersion = ""
   var rustVersion = ""
   var tailscaleHostname = ""
+  var webmuxVersion = ""
 
   var installLog = ""
   var isInstalling = false
@@ -163,6 +164,17 @@ final class AppState {
       if FileManager.default.fileExists(atPath: defaultDir) {
         githubDir = defaultDir
       }
+    }
+  }
+
+  func checkVersions() async {
+    if hasWebmux {
+      let r = await Shell.runAsync("\(BrewManager.brewPrefix())/bin/brew info \(BrewManager.formulaName) --json=v2 2>/dev/null")
+      if r.exitCode == 0, let range = r.output.range(of: "\"stable\":\""),
+         let end = r.output[range.upperBound...].firstIndex(of: "\"") {
+        webmuxVersion = "v" + String(r.output[range.upperBound..<end])
+      }
+      backendOutdated = await BrewManager.checkOutdated()
     }
   }
 

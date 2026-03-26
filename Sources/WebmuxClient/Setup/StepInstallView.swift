@@ -10,71 +10,138 @@ struct StepInstallView: View {
         .font(KG.monoBig)
         .foregroundStyle(KG.cyan)
 
-      Text("Installing webmux via Homebrew. Compiling sidecar from source...")
+      Text("Review components to install or update.")
         .font(KG.monoSmall)
         .foregroundStyle(KG.green.opacity(0.6))
-        .fixedSize(horizontal: false, vertical: true)
 
-      if state.hasPython {
-        Toggle("Also install Whisper (voice input)", isOn: $state.installWhisperOption)
-          .toggleStyle(NeonToggleStyle())
-          .font(KG.monoSmall)
-          .foregroundStyle(KG.cyan.opacity(0.7))
-      }
+      // Component list
+      VStack(spacing: 2) {
+        componentRow(
+          name: "webmux",
+          detail: state.hasWebmux ? (state.webmuxVersion.isEmpty ? "installed" : state.webmuxVersion) : "not installed",
+          installed: state.hasWebmux,
+          outdated: state.backendOutdated
+        )
 
-      // Terminal log
-      ZStack(alignment: .topTrailing) {
-        logArea
-        if !state.installLog.isEmpty {
-          logActions.padding(6)
+        if state.hasPython {
+          HStack(spacing: 8) {
+            Toggle("", isOn: $state.installWhisperOption)
+              .toggleStyle(NeonToggleStyle())
+              .labelsHidden()
+
+            Text("Whisper")
+              .font(KG.mono)
+              .foregroundStyle(whisperColor)
+              .frame(width: 90, alignment: .leading)
+
+            Text(whisperDetail)
+              .font(KG.monoSmall)
+              .foregroundStyle(KG.cyan.opacity(0.4))
+
+            Spacer()
+
+            Text("OPT")
+              .font(.system(size: 8, weight: .bold, design: .monospaced))
+              .foregroundStyle(KG.cyan.opacity(0.3))
+              .padding(.horizontal, 4)
+              .padding(.vertical, 1)
+              .overlay(RoundedRectangle(cornerRadius: 2).stroke(KG.cyan.opacity(0.2), lineWidth: 1))
+          }
+          .padding(.vertical, 3)
         }
       }
-      .frame(maxHeight: .infinity)
+      .padding(10)
+      .background(KG.bgCard)
+      .neonBorder()
 
-      // Status
+      if !state.needsInstall {
+        HStack(spacing: 6) {
+          Text("[OK]")
+            .font(KG.mono)
+            .foregroundStyle(KG.green)
+          Text("All components are installed and up to date.")
+            .font(KG.monoSmall)
+            .foregroundStyle(KG.green.opacity(0.7))
+        }
+      }
+
+      // Terminal log (only shown during/after install)
+      if state.isInstalling || !state.installLog.isEmpty {
+        ZStack(alignment: .topTrailing) {
+          logArea
+          if !state.installLog.isEmpty {
+            logActions.padding(6)
+          }
+        }
+        .frame(maxHeight: .infinity)
+      } else {
+        Spacer()
+      }
+
+      // Status bar
       statusBar
     }
     .padding(16)
+    .task {
+      await state.checkVersions()
+    }
   }
+
+  // MARK: - Component row
+
+  private func componentRow(name: String, detail: String, installed: Bool, outdated: Bool) -> some View {
+    HStack(spacing: 8) {
+      Text(installed ? (outdated ? "[UP]" : "[OK]") : "[--]")
+        .font(KG.monoSmall)
+        .foregroundStyle(installed ? (outdated ? KG.yellow : KG.green) : KG.pink)
+
+      Text(name)
+        .font(KG.mono)
+        .foregroundStyle(installed ? (outdated ? KG.yellow : KG.green) : KG.pink)
+        .frame(width: 90, alignment: .leading)
+
+      Text(detail + (outdated ? " — update available" : ""))
+        .font(KG.monoSmall)
+        .foregroundStyle(KG.cyan.opacity(0.4))
+
+      Spacer()
+    }
+    .padding(.vertical, 3)
+  }
+
+  private var whisperColor: Color {
+    if !state.installWhisperOption { return KG.cyan.opacity(0.3) }
+    return state.hasWhisper ? KG.green : KG.pink
+  }
+
+  private var whisperDetail: String {
+    if !state.installWhisperOption { return "skipped" }
+    return state.hasWhisper ? "installed" : "not installed"
+  }
+
+  // MARK: - Log area
 
   @ViewBuilder
   private var logArea: some View {
-    if !state.installLog.isEmpty {
-      ScrollViewReader { proxy in
-        ScrollView {
-          Text(state.installLog)
-            .font(.system(size: 10, design: .monospaced))
-            .foregroundStyle(KG.green)
-            .textSelection(.enabled)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(8)
-            .padding(.top, 20)
-          Color.clear.frame(height: 1).id("bottom")
-        }
-        .background(
-          RoundedRectangle(cornerRadius: 4)
-            .fill(Color.black)
-            .overlay(RoundedRectangle(cornerRadius: 4).stroke(KG.green.opacity(0.3), lineWidth: 1))
-        )
-        .onChange(of: state.installLog) {
-          withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
-        }
+    ScrollViewReader { proxy in
+      ScrollView {
+        Text(state.installLog)
+          .font(.system(size: 10, design: .monospaced))
+          .foregroundStyle(KG.green)
+          .textSelection(.enabled)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(8)
+          .padding(.top, 20)
+        Color.clear.frame(height: 1).id("bottom")
       }
-    } else {
-      VStack(spacing: 8) {
-        Text(">_")
-          .font(.system(size: 32, weight: .bold, design: .monospaced))
-          .foregroundStyle(KG.cyan.opacity(0.3))
-        Text("Ready to install")
-          .font(KG.monoSmall)
-          .foregroundStyle(KG.cyan.opacity(0.3))
-      }
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
       .background(
         RoundedRectangle(cornerRadius: 4)
           .fill(Color.black)
-          .overlay(RoundedRectangle(cornerRadius: 4).stroke(KG.cyan.opacity(0.15), lineWidth: 1))
+          .overlay(RoundedRectangle(cornerRadius: 4).stroke(KG.green.opacity(0.3), lineWidth: 1))
       )
+      .onChange(of: state.installLog) {
+        withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+      }
     }
   }
 
@@ -108,6 +175,8 @@ struct StepInstallView: View {
     }
   }
 
+  // MARK: - Status bar
+
   private var statusBar: some View {
     HStack(spacing: 6) {
       if state.isInstalling {
@@ -127,13 +196,6 @@ struct StepInstallView: View {
         Spacer()
         Button("RETRY") { Task { await state.runInstall() } }
           .buttonStyle(NeonButton(color: KG.pink))
-      } else if state.hasWebmux {
-        Text("[DONE]")
-          .font(KG.mono)
-          .foregroundStyle(KG.green)
-        Text("webmux installed successfully.")
-          .font(KG.monoSmall)
-          .foregroundStyle(KG.green.opacity(0.7))
       }
       Spacer()
     }
