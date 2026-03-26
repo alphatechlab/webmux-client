@@ -6,9 +6,7 @@ struct StepDoneView: View {
   @State private var glowPhase = false
 
   var body: some View {
-    VStack(spacing: 16) {
-      Spacer()
-
+    VStack(spacing: 12) {
       if state.mode == .running {
         Text("READY")
           .font(.system(size: 28, weight: .black, design: .monospaced))
@@ -71,10 +69,10 @@ struct StepDoneView: View {
           .foregroundStyle(KG.cyan.opacity(0.4))
       }
 
-      Spacer()
     }
     .frame(maxWidth: .infinity)
-    .padding(16)
+    .padding(.horizontal, 16)
+    .padding(.vertical, 12)
   }
 
   private func generateQR(for string: String) -> NSImage? {
