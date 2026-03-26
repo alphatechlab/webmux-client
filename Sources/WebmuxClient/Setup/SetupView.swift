@@ -194,11 +194,7 @@ struct SetupView: View {
       case .check:
         Button("CONTINUE >") {
           withAnimation {
-            if state.hasWebmux {
-              state.setupStep = .configure
-            } else {
-              state.setupStep = .install
-            }
+            state.setupStep = .install
           }
         }
         .buttonStyle(NeonAccentButton())
