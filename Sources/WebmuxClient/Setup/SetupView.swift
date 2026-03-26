@@ -12,6 +12,8 @@ struct SetupView: View {
         splashHeader
         muteButton.padding(8)
       }
+      .frame(height: 140)
+      .clipped()
 
       // Scanline separator
       Rectangle().fill(KG.cyan.opacity(0.3)).frame(height: 1)
@@ -20,16 +22,19 @@ struct SetupView: View {
       stepBar
         .padding(.vertical, 8)
         .padding(.horizontal, 16)
+        .fixedSize(horizontal: false, vertical: true)
 
       Rectangle().fill(KG.cyan.opacity(0.15)).frame(height: 1)
 
       // Content
       stepContent
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .clipped()
 
       // Footer
       Rectangle().fill(KG.cyan.opacity(0.3)).frame(height: 1)
       footer
+        .fixedSize(horizontal: false, vertical: true)
     }
     .frame(width: 560, height: 600)
     .background(KG.bg)
