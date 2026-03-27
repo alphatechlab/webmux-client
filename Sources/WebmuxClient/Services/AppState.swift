@@ -560,10 +560,11 @@ final class AppState {
     claudeInstalled = true
 
     let current = await Shell.runAsync("claude --version 2>/dev/null", login: true)
-    claudeCurrentVersion = current.output
+    let rawVersion = current.output
       .trimmingCharacters(in: .whitespacesAndNewlines)
       .components(separatedBy: "\n").last?
       .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    claudeCurrentVersion = rawVersion.components(separatedBy: " ").first ?? rawVersion
 
     let latest = await Shell.runAsync("npm view @anthropic-ai/claude-code version 2>/dev/null", login: true)
     claudeLatestVersion = latest.output.trimmingCharacters(in: .whitespacesAndNewlines)
