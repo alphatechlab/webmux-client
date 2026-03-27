@@ -23,6 +23,7 @@ struct MenuBarView: View {
     .padding(10)
     .frame(width: 290)
     .background(KG.bg)
+    .task { await state.checkForUpdates() }
   }
 
   private var separator: some View {
